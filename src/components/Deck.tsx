@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { type CSSProperties, Fragment, useCallback, useEffect, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useState } from "react";
 import { brands, stageAccents, stageBrands, stageCmds, stageIcons } from "../lib/brands";
 import { type Incident, incidents } from "../lib/incidents";
 import { type Stage, stages } from "../lib/stages";
