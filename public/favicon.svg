@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M6 18 V6 H18"/>
+    <path d="M46 6 H58 V18"/>
+    <path d="M58 46 V58 H46"/>
+    <path d="M18 58 H6 V46"/>
+  </g>
+  <path d="M16 24 H48 V40 H16" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <g fill="currentColor">
+    <circle cx="16" cy="24" r="4"/>
+    <circle cx="32" cy="24" r="4"/>
+    <circle cx="48" cy="24" r="4"/>
+    <circle cx="48" cy="40" r="4"/>
+    <circle cx="32" cy="40" r="4"/>
+    <circle cx="16" cy="40" r="4"/>
+  </g>
+  <style>
+    svg { color: #0a0a0a; }
+    @media (prefers-color-scheme: dark) {
+      svg { color: #f0f0f0; }
+    }
+  </style>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" fill="none">
+  <g transform="translate(0,0)">
+    <g stroke="#888" stroke-width="3.5" stroke-linecap="round" fill="none">
+      <path d="M6 18 V6 H18"/>
+      <path d="M46 6 H58 V18"/>
+      <path d="M58 46 V58 H46"/>
+      <path d="M18 58 H6 V46"/>
+    </g>
+    <path d="M16 24 H48 V40 H16" stroke="#888" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="16" cy="24" r="4" fill="#f05032"/>
+    <circle cx="32" cy="24" r="4" fill="#cb3837"/>
+    <circle cx="48" cy="24" r="4" fill="#2088ff"/>
+    <circle cx="48" cy="40" r="4" fill="#2196f3"/>
+    <circle cx="32" cy="40" r="4" fill="#2496ed"/>
+    <circle cx="16" cy="40" r="4" fill="#326ce5"/>
+  </g>
+  <text x="80" y="42" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="28" font-weight="500" fill="#888" letter-spacing="-0.5">chainscope</text>
+</svg>

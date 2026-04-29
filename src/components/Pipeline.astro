@@ -1,0 +1,133 @@
+---
+import { stages } from "../lib/stages";
+
+interface Props {
+  active?: string;
+}
+const { active } = Astro.props;
+---
+
+<figure class="pipeline" data-active={active ?? ""}>
+  <ol class="pipeline-track">
+    {
+      stages.map((s) => (
+        <li class="pipeline-stage" data-stage={s.id}>
+          <a href={`#${s.id}`} class="pipeline-link">
+            <span class="pipeline-num">{s.num}</span>
+            <span class="pipeline-label">{s.label}</span>
+            <span class="pipeline-hint">{s.hint}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+  <figcaption class="pipeline-caption">
+    From a developer's keyboard to your production environment, an artifact passes
+    through six surfaces. An attacker only needs one.
+  </figcaption>
+</figure>
+
+<style>
+  .pipeline {
+    margin: 0;
+    padding: 0;
+  }
+
+  .pipeline-track {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--color-rule);
+    border-bottom: 1px solid var(--color-rule);
+  }
+
+  @media (max-width: 720px) {
+    .pipeline-track {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .pipeline-stage {
+    position: relative;
+    border-right: 1px solid var(--color-rule);
+  }
+
+  .pipeline-stage:last-child {
+    border-right: none;
+  }
+
+  @media (max-width: 720px) {
+    .pipeline-stage:nth-child(2n) {
+      border-right: none;
+    }
+    .pipeline-stage:nth-child(-n + 4) {
+      border-bottom: 1px solid var(--color-rule);
+    }
+  }
+
+  .pipeline-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.1rem 0.9rem 1.2rem;
+    text-decoration: none;
+    color: var(--color-ink);
+    transition: background 120ms ease;
+  }
+
+  .pipeline-link:hover {
+    background: rgba(179, 54, 28, 0.04);
+  }
+
+  .pipeline-num {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-ink-soft);
+    letter-spacing: 0.04em;
+  }
+
+  .pipeline-label {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.1;
+  }
+
+  .pipeline-hint {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--color-ink-soft);
+    letter-spacing: 0.02em;
+  }
+
+  .pipeline[data-active]:not([data-active=""]) .pipeline-stage[data-stage] {
+    opacity: 0.45;
+  }
+
+  .pipeline[data-active] .pipeline-stage[data-stage]:hover {
+    opacity: 1;
+  }
+
+  .pipeline[data-active="source"] .pipeline-stage[data-stage="source"],
+  .pipeline[data-active="deps"] .pipeline-stage[data-stage="deps"],
+  .pipeline[data-active="build"] .pipeline-stage[data-stage="build"],
+  .pipeline[data-active="publish"] .pipeline-stage[data-stage="publish"],
+  .pipeline[data-active="distribute"] .pipeline-stage[data-stage="distribute"],
+  .pipeline[data-active="consume"] .pipeline-stage[data-stage="consume"] {
+    opacity: 1;
+    background: rgba(179, 54, 28, 0.06);
+    box-shadow: inset 0 -3px 0 var(--color-accent);
+  }
+
+  .pipeline-caption {
+    margin-top: 1rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--color-ink-soft);
+    line-height: 1.5;
+  }
+</style>

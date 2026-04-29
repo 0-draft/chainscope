@@ -1,0 +1,562 @@
+---
+import Pipeline from "../components/Pipeline.astro";
+import Stage from "../components/Stage.astro";
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="chainscope · the supply chain, in six surfaces"
+  description="A visual, scrollable explainer for software supply chain security. Six attack surfaces, six real incidents, the defense that would have stopped each."
+>
+  <article class="article">
+    <p class="kicker">A field notebook for software supply chain security</p>
+
+    <h1 class="title">
+      Six places where someone else's code becomes yours.
+    </h1>
+
+    <p class="lede">
+      The binary running on your laptop, your phone, your production cluster
+      passed through several hands before it reached you. Most readers can name
+      one or two of those hands. There are six. An attacker who owns any of them
+      owns the artifact, and you cannot tell the difference by looking.
+    </p>
+
+    <p class="lede">
+      This page is a tour of those six surfaces. For each, a recent attack that
+      hit it. For each, the defense that would have caught the attack early.
+      Names, hashes, commit IDs, links to the actual transparency log entries
+      where they exist. Read in order, the second time across you will see the
+      whole chain at once.
+    </p>
+
+    <Pipeline />
+
+    <Stage
+      id="source"
+      num="01"
+      title="Source"
+      question="Who is allowed to change the code, and how do you know they meant to?"
+    >
+      <p class="lead">
+        On a quiet evening in early 2023, the maintainer of a small compression
+        library called <code>xz-utils</code> received a polite email. A new
+        contributor, "Jia Tan," wanted to help. The maintainer was burned out.
+        Patches kept coming, and they were good. Eighteen months later, Jia Tan
+        had commit access. Six months after that, almost every Linux server on
+        Earth shipped a backdoor in <code>sshd</code>.
+      </p>
+
+      <div class="incident">
+        <span class="incident-tag">Anchor &middot; xz-utils &middot; 2024-03-29</span>
+        <p class="incident-headline">
+          CVE-2024-3094: a multi-year social engineering operation almost
+          shipped a remote SSH backdoor to every major Linux distribution.
+        </p>
+        <p>
+          The malicious code did not live in the Git repository. It was in the
+          release tarball, hidden inside test fixtures and stitched together by
+          obfuscated <code>configure</code> macros at build time. Anyone reading
+          the source on GitHub saw nothing. Anyone running <code>./configure
+          &amp;&amp; make</code> from the released tarball got a backdoor.
+        </p>
+        <p class="incident-meta">
+          <a
+            href="https://www.openwall.com/lists/oss-security/2024/03/29/4"
+            >Andres Freund's original disclosure</a
+          >
+          &middot;
+          <a href="https://research.swtch.com/xz-script">Russ Cox's reconstruction</a>
+        </p>
+      </div>
+
+      <p>
+        The first surface is the source itself. Two questions sit underneath it.
+        Who can write to the repository, and once they have written, can a
+        reader prove that what they wrote is what reached the build server?
+      </p>
+
+      <ul class="defenses">
+        <li>
+          <span class="defense-name">commit signing</span>
+          <span class="defense-desc">
+            Sigstore <code>gitsign</code> or GPG signatures bind a commit to a
+            real identity. A reviewer can ask: "is this commit from the person
+            whose laptop I trust?" Without it, an attacker who steals an SSH
+            key can author commits as anyone.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">branch protection</span>
+          <span class="defense-desc">
+            Required reviews, signed-commit enforcement, and protected tags
+            prevent a single compromised maintainer from pushing straight to
+            <code>main</code> or rewriting a release tag after the fact.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">tarball reproducibility</span>
+          <span class="defense-desc">
+            If the released tarball is byte-identical to <code>git
+            archive</code> on the tagged commit, there is nowhere for a
+            tarball-only payload to hide. xz worked precisely because the
+            tarball and the repository disagreed.
+          </span>
+        </li>
+      </ul>
+    </Stage>
+
+    <Stage
+      id="deps"
+      num="02"
+      title="Dependencies"
+      question="Your code is mostly other people's code. Whose, exactly?"
+    >
+      <p class="lead">
+        On 14 September 2025, a worm started spreading across the npm registry.
+        It did not need a zero-day. It needed one developer to publish from a
+        machine that had been phished. The worm read that developer's npm
+        token, listed every package they could publish to, injected itself into
+        each, and pushed new versions. Within a day, hundreds of packages were
+        compromised; within weeks, tens of thousands of repositories carried
+        traces.
+      </p>
+
+      <div class="incident">
+        <span class="incident-tag">Anchor &middot; Shai-Hulud worm &middot; 2025-09 / 2025-11</span>
+        <p class="incident-headline">
+          The first self-replicating worm in a public package registry. Each
+          infected developer becomes a launcher for the next wave.
+        </p>
+        <p>
+          The payload also reached for GitHub Actions: stolen tokens were used
+          to register self-hosted runners, exfiltrate the secret store via
+          <code>toJSON(secrets)</code>, and plant backdoored workflows.
+          Shai-Hulud 2.0 in November was wider, with over 25,000 malicious
+          repositories created by automation alone.
+        </p>
+        <p class="incident-meta">
+          <a
+            href="https://unit42.paloaltonetworks.com/npm-supply-chain-attack/"
+            >Unit 42 writeup</a
+          >
+          &middot;
+          <a
+            href="https://www.cisa.gov/news-events/alerts/2025/09/23/widespread-supply-chain-compromise-impacting-npm-ecosystem"
+            >CISA alert</a
+          >
+        </p>
+      </div>
+
+      <p>
+        Most projects have more lines of dependency code than first-party code.
+        Each one is a hand that has touched the artifact.
+      </p>
+
+      <ul class="defenses">
+        <li>
+          <span class="defense-name">SBOM</span>
+          <span class="defense-desc">
+            A Software Bill of Materials lists every dependency, version, and
+            hash. When a CVE breaks tomorrow, the question "are we exposed?"
+            becomes a grep instead of an audit.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">version pinning</span>
+          <span class="defense-desc">
+            Lockfiles and hash-pinned dependencies make "an attacker pushed a
+            new version" not the same as "your build pulled it." Floating
+            ranges (<code>^1.2</code>, <code>~3.4</code>) let worms walk in.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">scorecards</span>
+          <span class="defense-desc">
+            OpenSSF Scorecard automates the question "does this package look
+            like it is maintained by humans who care?" It checks 2FA, signed
+            releases, recent activity, and branch protection on the upstream.
+          </span>
+        </li>
+      </ul>
+    </Stage>
+
+    <Stage
+      id="build"
+      num="03"
+      title="Build"
+      question="The artifact is not the source. Who turned one into the other?"
+    >
+      <p class="lead">
+        On 14 March 2025, every version tag of a popular GitHub Action called
+        <code>tj-actions/changed-files</code> was rewritten to point at a
+        single malicious commit. Pipelines that used <code>uses:
+        tj-actions/changed-files@v44</code> suddenly ran code that walked the
+        runner's memory, found every CI secret, and printed them, base64
+        encoded, into the public workflow log. Twenty-three thousand
+        repositories ran the poisoned commit during the fifteen hours it took
+        to notice.
+      </p>
+
+      <div class="incident">
+        <span class="incident-tag">Anchor &middot; tj-actions/changed-files &middot; CVE-2025-30066</span>
+        <p class="incident-headline">
+          A retroactive tag rewrite turned a trusted dependency into a secret
+          exfiltrator, with no outbound traffic. Just <code>echo</code>.
+        </p>
+        <p>
+          The trick was to make every existing version tag point at the new
+          malicious commit, so anyone who had ever depended on the action,
+          regardless of which version they thought they pinned, pulled the
+          payload. The only repositories that escaped were those that pinned
+          to a full commit SHA rather than a tag. The compromised commit had a
+          hash. The pinned ones did not match.
+        </p>
+        <p class="incident-meta">
+          <a
+            href="https://www.cisa.gov/news-events/alerts/2025/03/18/supply-chain-compromise-third-party-tj-actionschanged-files-cve-2025-30066-and-reviewdogaction"
+            >CISA alert</a
+          >
+          &middot;
+          <a
+            href="https://www.ox.security/blog/15-hours-of-open-sourced-hell-lessons-learned-from-tj-actions-changed-files/"
+            >OX Security timeline</a
+          >
+        </p>
+      </div>
+
+      <p>
+        Between source and binary lives a machine. Whatever runs on that
+        machine becomes part of every artifact. If the machine is rented, the
+        environment is shared, or the build steps are mutable, the attack
+        surface grows in ways you cannot see by reading code.
+      </p>
+
+      <ul class="defenses">
+        <li>
+          <span class="defense-name">SHA pinning</span>
+          <span class="defense-desc">
+            <code>uses: tj-actions/changed-files@a284dc...</code> instead of
+            <code>@v44</code>. A commit SHA cannot be silently moved. Tags can.
+            This single change made tj-actions a non-event for projects that
+            had it.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">SLSA provenance</span>
+          <span class="defense-desc">
+            A signed attestation, generated by the build platform itself,
+            stating "this artifact was built from this commit, by this builder,
+            with these inputs." The verifier later checks that the running
+            artifact matches a provenance record signed by an identity it
+            trusts.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">hermetic / reproducible build</span>
+          <span class="defense-desc">
+            Build with no network, fully declared inputs, and deterministic
+            output. Two independent builders produce byte-identical artifacts
+            or one of them is lying. Removes the build machine itself as a
+            place to hide a payload.
+          </span>
+        </li>
+      </ul>
+    </Stage>
+
+    <Stage
+      id="publish"
+      num="04"
+      title="Publish"
+      question="The artifact has a name now. Who put it there?"
+    >
+      <p class="lead">
+        In March 2026, a credential phishing campaign attributed to the
+        <em>TeamPCP</em> group reached PyPI and pushed a malicious version of
+        <code>litellm</code>, a popular LLM proxy with millions of installs.
+        The compromised release was live for forty minutes before PyPI
+        quarantined it. Anyone whose CI ran <code>pip install litellm</code>
+        in that window pulled a backdoor.
+      </p>
+
+      <div class="incident">
+        <span class="incident-tag">Anchor &middot; TeamPCP / LiteLLM &middot; 2026-03-24</span>
+        <p class="incident-headline">
+          A signed identity for who can publish under a name is a different
+          question from who wrote the code.
+        </p>
+        <p class="incident-meta">
+          <a
+            href="https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/"
+            >Datadog Security Labs analysis</a
+          >
+          &middot;
+          <a
+            href="https://docs.litellm.ai/blog/security-update-march-2026"
+            >LiteLLM disclosure</a
+          >
+        </p>
+      </div>
+
+      <ul class="defenses">
+        <li>
+          <span class="defense-name">Sigstore signing</span>
+          <span class="defense-desc">
+            <code>cosign sign</code> + Fulcio give an artifact a short-lived
+            certificate tied to a real workload identity (a GitHub Actions
+            workflow, a Buildkite job). No long-lived private keys to steal.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">Rekor transparency log</span>
+          <span class="defense-desc">
+            Every signature is appended to an immutable, publicly auditable
+            log. A signature on its own only proves "someone signed this." A
+            log entry proves "and they cannot retroactively unsay it."
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">trusted publisher / OIDC</span>
+          <span class="defense-desc">
+            PyPI and npm now accept short-lived tokens from a specific GitHub
+            Actions workflow on a specific repository. A stolen developer
+            password no longer publishes a release.
+          </span>
+        </li>
+      </ul>
+    </Stage>
+
+    <Stage
+      id="distribute"
+      num="05"
+      title="Distribute"
+      question="The name resolves to bytes somewhere. To whose?"
+    >
+      <p class="lead">
+        On 21 April 2026, a worm reached for a different angle: it published
+        <code>pgserve</code>, a name that looked enough like a real PostgreSQL
+        helper to slip past a tired engineer at <code>npm install</code> time.
+        A <code>postinstall</code> hook scanned the developer's machine for
+        npm publish tokens, then jumped to PyPI if it found a <code>.pypirc</code>.
+      </p>
+
+      <div class="incident">
+        <span class="incident-tag">Anchor &middot; pgserve typosquat worm &middot; 2026-04-21</span>
+        <p class="incident-headline">
+          Distribution is where humans and registries disagree about what a
+          name means.
+        </p>
+        <p class="incident-meta">
+          <a
+            href="https://www.theregister.com/2026/04/22/another_npm_supply_chain_attack/"
+            >The Register coverage</a
+          >
+          &middot;
+          <a
+            href="https://thehackernews.com/2026/04/self-propagating-supply-chain-worm.html"
+            >The Hacker News writeup</a
+          >
+        </p>
+      </div>
+
+      <ul class="defenses">
+        <li>
+          <span class="defense-name">namespace scope</span>
+          <span class="defense-desc">
+            Scoped packages (<code>@org/pgserve</code>) tie a name to an owner.
+            Bare names race for whoever publishes first.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">registry attestation</span>
+          <span class="defense-desc">
+            npm and PyPI now expose, alongside the artifact, the Sigstore
+            attestation it shipped with. Clients can verify the chain at
+            install time, not "later, when there's an incident."
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">install-time policy</span>
+          <span class="defense-desc">
+            <code>npm install --ignore-scripts</code>, sandboxed
+            <code>pip install</code> via PEP 668, container-based dev
+            environments. The fewer things a postinstall can read, the smaller
+            the worm's launching pad.
+          </span>
+        </li>
+      </ul>
+    </Stage>
+
+    <Stage
+      id="consume"
+      num="06"
+      title="Consume"
+      question="The artifact is on the box. Should it be allowed to run?"
+    >
+      <p class="lead">
+        A signed, attested, transparently logged artifact is still just bytes
+        on disk. The last surface is the moment someone runs them. The defense
+        here does not prevent the previous five from being attacked. It refuses
+        to play along when they were.
+      </p>
+
+      <div class="incident">
+        <span class="incident-tag">Anchor &middot; SUNSPOT / SolarWinds &middot; 2020 (historical)</span>
+        <p class="incident-headline">
+          Once a poisoned binary is on the box, only policy stops it from
+          running. SUNSPOT modified Orion at build time, signed it with the
+          legitimate signing pipeline, and shipped to thousands of customers
+          as an "official" update.
+        </p>
+      </div>
+
+      <ul class="defenses">
+        <li>
+          <span class="defense-name">cosign verify</span>
+          <span class="defense-desc">
+            Refuse to run an image that does not carry a signature from an
+            identity you expected: a specific GitHub repository, a specific
+            workflow file, a specific builder.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">admission policy</span>
+          <span class="defense-desc">
+            Kyverno or OPA Gatekeeper turn "trust the registry" into a checked
+            assertion. <code>verifyImages</code> at the cluster boundary fails
+            closed.
+          </span>
+        </li>
+        <li>
+          <span class="defense-name">VEX</span>
+          <span class="defense-desc">
+            Vulnerability Exploitability eXchange documents say "yes the SBOM
+            lists this CVE, no it does not apply because we never call the
+            affected function." Lets policy be precise instead of paranoid.
+          </span>
+        </li>
+      </ul>
+    </Stage>
+
+    <section class="recap">
+      <h2 class="recap-title">Six surfaces, six controls.</h2>
+      <p>
+        Read top to bottom, no single defense above stops every attack. A
+        signed commit does nothing for a tampered tarball. SLSA provenance
+        does nothing for a typosquat. Admission policy does nothing for a
+        compromised maintainer. The point of the layered model is that the
+        attacker has to defeat every one. The defender only has to keep one
+        of them honest at any given stage.
+      </p>
+      <Pipeline />
+      <p class="recap-coda">
+        Each surface in this page will eventually have its own deeper
+        explainer: a runnable demo, a real attestation to inspect, a slider
+        between SLSA Build Levels. Phase 2 of <em>chainscope</em>. The map
+        comes first.
+      </p>
+    </section>
+
+    <footer class="article-footer">
+      <p class="article-footer-meta">
+        <a href="https://github.com/0-draft/chainscope">github.com/0-draft/chainscope</a>
+        &middot;
+        <a href="https://github.com/0-draft/chainscope/issues"
+          >corrections welcome</a
+        >
+      </p>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .article {
+    font-family: var(--font-serif);
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+    margin: 0;
+  }
+
+  .title {
+    margin: 0.6rem 0 1.5rem;
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    max-width: 22ch;
+  }
+
+  .lede {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    margin: 0 0 1rem;
+    max-width: 36rem;
+    color: var(--color-ink);
+  }
+
+  .lede + .lede {
+    margin-top: 1rem;
+  }
+
+  .article :global(.lede + figure.pipeline),
+  .article :global(p.lede + figure.pipeline) {
+    margin-top: 3.25rem;
+  }
+
+  .article :global(figure.pipeline) {
+    margin: 3rem 0 0;
+  }
+
+  .article :global(.incident-meta) {
+    margin: 0.6rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+  }
+
+  .recap {
+    margin: 6rem 0 4rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  .recap-title {
+    margin: 0 0 1rem;
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 2.1rem;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .recap p {
+    line-height: 1.65;
+    max-width: 36rem;
+    margin: 0 0 1rem;
+  }
+
+  .recap-coda {
+    margin-top: 2rem;
+    font-style: italic;
+    color: var(--color-ink-soft);
+  }
+
+  .article-footer {
+    margin: 5rem 0 0;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  .article-footer-meta {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--color-ink-soft);
+  }
+</style>
