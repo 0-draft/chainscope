@@ -1,3 +1,5 @@
+<div align="center">
+
 <img src="./public/logo.svg" alt="chainscope" width="320" />
 
 # chainscope
@@ -5,6 +7,8 @@
 *the supply chain, in six surfaces.*
 
 [live](https://0-draft.github.io/chainscope) · [ci](https://github.com/0-draft/chainscope/actions) · [mit](./LICENSE)
+
+</div>
 
 ---
 
